@@ -1,12 +1,12 @@
-from .conf import redis_conn
 from .constants import CONTRIBUTOR_CACHE_KEY
+from .mixins import CacheMixin
 
 
 class OrganizationParser:
     def __init__(self, organization):
         self.organization = organization
 
-    def _get_repos(self, repos):
+    def _get_repos(self):
         """Return a list of all possible repositories.
 
         Args:
@@ -15,16 +15,16 @@ class OrganizationParser:
         Returns:
             list: list of all possible repositories.
         """
-        return [repo for repo in repos]
+        return [repo for repo in self.organization.get_repos()]
 
     def parse(self):
         return {
             "name": self.organization.name,
-            "repos": self._get_repos(self.organization.get_repos()),
+            "repos": self._get_repos(),
         }
 
 
-class ContributorParser:
+class ContributorParser(CacheMixin):
     def __init__(self, contributors):
         self.contributors = contributors
 
@@ -39,9 +39,8 @@ class ContributorParser:
             - dict: dict with all needed contributor's information.
         """
         cache_key = CONTRIBUTOR_CACHE_KEY.format(id=contributor.id)
-        if redis_conn.hgetall(cache_key):
-            print(f"Get {contributor.id} from the cache")
-            return redis_conn.hgetall(cache_key)
+        if self.get_from_cache(cache_key):
+            return self.get_from_cache(cache_key)
         else:
             user_info = {
                 "id": contributor.id,
@@ -49,7 +48,7 @@ class ContributorParser:
                 "name": contributor.name or "",
                 "email": contributor.email or "",
             }
-            redis_conn.hmset(cache_key, user_info)
+            self.set_into_cache(cache_key, user_info)
             return user_info
 
     def parse(self):
