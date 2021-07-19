@@ -1,9 +1,9 @@
 import csv
 import multiprocessing as mp
+import os
 from datetime import datetime
 
 from github import Github
-
 from report.services import GithubService
 
 
@@ -14,6 +14,7 @@ class GithubContributorsReport:
         self.github_object = Github(auth_key)
         self.organization = organization
         self.report_path = report_path
+        self.service = GithubService(self.github_object)
 
     def _get_repo_contributors_and_languages(self, repo) -> dict:
         """Get the contributors and languages for the repo
@@ -25,8 +26,8 @@ class GithubContributorsReport:
             dict: with all contributors and languages
         """
         print(f"start getting contributors and languages for {repo.name}")
-        languages = GithubService.get_languages(repo)
-        contributors = GithubService.get_contributors(repo)
+        languages = self.service.get_languages(repo)
+        contributors = self.service.get_contributors(repo)
         return {
             "users": contributors,
             "repo": repo.name,
@@ -62,9 +63,7 @@ class GithubContributorsReport:
         Return:
             dict: for contributors with its repositories and languages
         """
-        organization_parser = GithubService.get_organization(
-            self.github_object, self.organization
-        )
+        organization_parser = self.service.get_organization(self.organization)
         pool = mp.Pool(processes=mp.cpu_count())
         results = pool.map(
             self._get_repo_contributors_and_languages, organization_parser["repos"]
@@ -73,13 +72,18 @@ class GithubContributorsReport:
 
     @property
     def filename(self):
-        """Generate the report filename.
+        """Generate the report filename in the directory.
+        The directory will be created if it's not exists.
 
         Return:
             str: The filename
         """
+        # create the folder if it doesn't exist'
+        if not os.path.exists(self.report_path):
+            os.makedirs(self.report_path)
         time_now = datetime.now().strftime("%m_%d_%Y_%H_%M")
-        return f"{self.report_path}/report_{time_now}.csv"
+        filename = f"{self.report_path}/report_{time_now}.csv"
+        return os.path.join(self.report_path, filename)
 
     def _write_csv(self, results: dict) -> None:
         """Write the results into a CSV file.
@@ -87,7 +91,7 @@ class GithubContributorsReport:
         Args:
             results (dict): dict for contributors with its repositories and languages
         """
-        with open(self.filename, mode="w") as report_file:
+        with open(self.filename, mode="w+") as report_file:
             employee_writer = csv.writer(report_file)
             employee_writer.writerow(
                 ["Login", "Name", "Email", "Repositories", "Languages"]
@@ -103,6 +107,7 @@ class GithubContributorsReport:
                         ", ".join(data["languages"]),
                     ]
                 )
+            print(f"Created CSV file successfully: {self.filename}")
 
     def generate_report(self) -> None:
         """Start point for this class, will call all services and write
