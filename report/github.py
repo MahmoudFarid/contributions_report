@@ -7,7 +7,7 @@ from github import Github
 from report.services import GithubService
 
 
-class GithubContributorReport:
+class GithubContributorsReport:
     def __init__(
         self, auth_key: str, organization: str, report_path: str, *args, **kwargs
     ) -> None:

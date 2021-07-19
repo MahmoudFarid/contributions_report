@@ -1,6 +1,6 @@
 import argparse
 
-from report.github import GithubContributorReport
+from report.github import GithubContributorsReport
 
 
 if __name__ == "__main__":
@@ -19,6 +19,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    GithubContributorReport(
+    GithubContributorsReport(
         args.auth_key, args.organization, args.file_path
     ).generate_report()
