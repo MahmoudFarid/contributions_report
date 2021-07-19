@@ -45,9 +45,13 @@ class GithubContributorsReport:
         """
         results = dict()
         for result in data:
+            # result will be a list of users and repo object and repo's languages.
             for user in result["users"]:
+                # check if we get this user on any repo before or not
+                # if found, we will append this repo to his list
                 if user["id"] in results:
                     results[user["id"]]["repos"].append(result["repo"])
+                # if not found, will add the first repo for this user
                 else:
                     results[user["id"]] = {
                         "user": user,
