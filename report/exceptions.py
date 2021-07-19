@@ -15,3 +15,7 @@ class ContributorServiceException(BaseException):
 
 class LanguageServiceException(BaseException):
     pass
+
+
+class RateLimitException(BaseException):
+    pass
